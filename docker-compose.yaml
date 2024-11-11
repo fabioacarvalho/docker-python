@@ -3,9 +3,11 @@ version: '3.8'
 services:
   db:
     image: mysql:8.1.0
-    environment:
-      - MYSQL_ROOT_PASSWORD=root
-      - MYSQL_DATABASE=app_db
+    # environment:
+    #   - MYSQL_ROOT_PASSWORD=root
+    #   - MYSQL_DATABASE=app_db
+    env_file:
+      - ./db/.env
     ports:
       - "3306:3306"
     networks:
@@ -21,7 +23,38 @@ services:
       - "80:80"
     networks:
       - app-networks
-
+  app:
+    build:
+     context: ./app
+     dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+    volumes:
+      - ./app:/app
+    networks:
+      - app-networks
+    env_file:
+      - ./app/.env
+    depends_on:
+      - db
+  db-migrate:
+    build:
+     context: ./app
+     dockerfile: Dockerfile
+    ports:
+      - 8000:8000
+    volumes:
+      - ./app:/app
+    networks:
+      - app-networks
+    env_file:
+      - ./app/.env
+    depends_on:
+      - db
+    profiles:
+      - tools
+    command: ["python3", "manage.py", "migrate"]
+    
 networks:
   app-networks:
     driver: bridge
